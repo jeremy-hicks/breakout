@@ -1,5 +1,6 @@
 function init(self)
 	math.randomseed(os.time())
+	msg.post("#", "initialize")
 	msg.post("paddle", "attach_ball", { ball_id = go.get_id("ball") })
 end
 
@@ -8,7 +9,29 @@ function update(self, dt)
 end
 
 function on_message(self, message_id, message, sender)
-	if message_id == hash("collision_response") and message.group == hash("ball") then
+	if message_id == hash("initialize") then
+		fbinstant.initialize(function(self, success)
+			if not success then
+				print("ERROR! Unable to initialize FBInstant")
+				return
+			end
+
+			fbinstant.start_game(function(self, success)
+				if not success then
+					print("ERROR! Unable to start game")
+					return
+				end
+				--[[
+				local context_id, context_type = fbinstant.get_context()
+				if not context_id or context_type == fbinstant.CONTEXT_SOLO then
+					monarch.show(hash("start"))
+				else
+					monarch.show(hash("game"), nil, { context_id = context_id })
+				end
+				--]]
+			end)
+		end)
+	elseif message_id == hash("collision_response") and message.group == hash("ball") then
 		msg.post(message.other_id, "stop")
 		msg.post("paddle", "attach_ball", { ball_id = message.other_id })
 	end
